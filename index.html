@@ -20,43 +20,48 @@
     .options input[type="radio"] { margin-right: 12px; transform: scale(1.2); }
     .btn { background: #2563eb; color: white; border: none; padding: 12px 24px; font-size: 1rem; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; }
     .btn:hover { background: #1d4ed8; }
-    
-    /* મોડલ્સ અને ઓવરલે */
     .overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f172a; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; text-align: center; padding: 25px; }
   </style>
 </head>
 <body oncontextmenu="return false;">
 
-  <!-- ૧. શરૂઆતનું GPS વેરિફિકેશન અને લોગિન મોડલ -->
+  <!-- ૧. QR કોડ વેરિફિકેશન અને વિગતો ભરવાનું મોડલ -->
   <div id="start-overlay" class="overlay">
-    <h2 id="geo-status-title">સ્થળ (GPS Location) ચકાસી રહ્યા છીએ...</h2>
-    <p id="geo-status-msg">કૃપા કરીને બ્રાઉઝરમાં Location Permission મંજૂર કરો.</p>
-    
-    <div id="login-box" style="display: none; max-width: 340px; width: 100%; margin-top: 20px;">
+    <div id="auth-box" style="max-width: 360px; width: 100%;">
+      <h2 id="status-title" style="color: #38bdf8; margin-bottom: 5px;">પરીક્ષા પોર્ટલ</h2>
+      <p id="status-msg" style="color: #94a3b8; margin-bottom: 20px;">વિગતો ભરીને શરૂ કરો</p>
+
       <div class="form-group" style="text-align: left;">
-        <label>વિદ્યાર્થીનું નામ:</label>
-        <input type="text" id="stud-name" placeholder="પૂરું નામ લખો" required>
+        <label>વિદ્યાર્થીનું પૂરું નામ:</label>
+        <input type="text" id="stud-name" placeholder="દા.ત. પટેલ રાહુલ એમ." required>
       </div>
       <div class="form-group" style="text-align: left;">
-        <label>રોલ નંબર:</label>
-        <input type="text" id="stud-roll" placeholder="રોલ નંબર લખો" required>
+        <label>રોલ નંબર / બેઠક નંબર:</label>
+        <input type="text" id="stud-roll" placeholder="દા.ત. 101" required>
       </div>
       <button class="btn" onclick="startExam()">પરીક્ષા શરૂ કરો (Full Screen)</button>
     </div>
+
+    <!-- જો QR સ્કેન વગર ડાયરેક્ટ ખોલે તો આ એરર બોક્સ દેખાશે -->
+    <div id="error-box" style="display: none; max-width: 400px;">
+      <h2 style="color: #ef4444; font-size: 1.8rem;">🚫 પ્રવેશ પ્રતિબંધિત!</h2>
+      <p style="font-size: 1.1rem; line-height: 1.6;">તમે માન્ય QR કોડ સ્કેન કર્યો નથી અથવા સીધી લિંક ખોલી છે.</p>
+      <p style="color: #fca5a5;">કૃપા કરીને પરીક્ષા હોલના બોર્ડ પર લગાવેલો QR કોડ સ્કેન કરો.</p>
+    </div>
   </div>
 
-  <!-- ૨. ઇન્વિજિલેટર અનલોક મોડલ (ટેબ સ્વિચ કે કોલ આવે ત્યારે) -->
+  <!-- ૨. સુપરવાઇઝર અનલોક મોડલ -->
   <div id="lockout-modal" class="overlay" style="display: none; background: rgba(15, 23, 42, 0.96);">
     <h2 style="color: #ef4444; font-size: 1.8rem; margin-bottom: 10px;">⚠️ પેપર લૉક કરવામાં આવ્યું છે</h2>
     <p id="lockout-reason" style="font-size: 1.1rem; color: #fca5a5;"></p>
-    <p style="margin-top: 10px;">સુપરવાઇઝરને બોલાવો અને તેમનો પિન દાખલ કરાવો.</p>
+    <p>સુપરવાઇઝરને બોલાવો અને તેમનો પિન દાખલ કરાવો.</p>
     <div style="max-width: 280px; width: 100%; margin-top: 20px;">
       <input type="password" id="supervisor-pin" placeholder="સુપરવાઇઝર PIN" style="width: 100%; padding: 12px; font-size: 1.2rem; border-radius: 6px; border: none; text-align: center; margin-bottom: 12px;">
       <button class="btn" onclick="unlockExam()" style="background: #16a34a;">અનલોક કરો</button>
     </div>
   </div>
 
-  <!-- ૩. મુખ્ય પરીક્ષા પેજ -->
+  <!-- ૩. મુખ્ય પ્રશ્નપત્ર સેક્શન -->
   <div class="container" id="exam-box" style="display: none;">
     <div class="header">
       <div>
@@ -73,45 +78,24 @@
   </div>
 
   <script>
-    // ========================================================
-    // ૧. કસ્ટમ સેટિંગ્સ (તમારી જરૂરિયાત મુજબ અહીં ફેરફાર કરો)
-    // ========================================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxetmZuRO-EPY5ijpSl4WayEhH5Lxe3VPLaX06uW0hhuYwxZP4dNpvJXiVPC2176nHZ/exec";
-    const TARGET_LAT = 22.488667;     // તમારા સેન્ટરનો અક્ષાંશ (Latitude)
-    const TARGET_LON = 70.070596;     // તમારા સેન્ટરનો રેખાંશ (Longitude)
-    const MAX_ALLOWED_DISTANCE = 150; // માન્ય અંતર (મીટરમાં)
-    const EXAM_MINUTES = 60;        // પરીક્ષાનો સમય (મિનિટમાં)
-    const SUPERVISOR_PIN = "9824";  // સુપરવાઇઝરનો અનલોક પિન
-    const MAX_VIOLATIONS = 3;       // કેટલી વાર અનલોક થઈ શકે
+    // ==========================================
+    // ૧. સેટિંગ્સ
+    // ==========================================
+    const SCRIPT_URL = "તમારી_GOOGLE_APPS_SCRIPT_WEB_APP_URL_અહીં_મૂકો";
+    const SECRET_QR_TOKEN = "EXAM2026_ROOM1"; // આ ટોકન QR Code ની લિંકમાં હોવો જરૂરી છે
+    const EXAM_MINUTES = 60;
+    const SUPERVISOR_PIN = "9824";
+    const MAX_VIOLATIONS = 3;
 
-    // ========================================================
-    // ૨. સવાલોનું લિસ્ટ (અહીં તમારા પ્રશ્નો ઉમેરતા જાઓ)
-    // ========================================================
+    // ૧૦૦ પ્રશ્નોનું લિસ્ટ
     const rawQuestions = [
-      {
-        id: "q1",
-        text: "ગુજરાતનું પાટનગર કયું છે?",
-        options: { A: "અમદાવાદ", B: "ગાંધીનગર", C: "વડોદરા", D: "રાજકોટ" }
-      },
-      {
-        id: "q2",
-        text: "કમ્પ્યુટરનું મગજ કોને કહેવામાં આવે છે?",
-        options: { A: "RAM", B: "CPU", C: "Hard Disk", D: "Monitor" }
-      },
-      {
-        id: "q3",
-        text: "ભારતનું રાષ્ટ્રીય ફૂલ કયું છે?",
-        options: { A: "ગુલાબ", B: "સૂર્યમુખી", C: "કમળ", D: "મોગરો" }
-      },
-      {
-        id: "q4",
-        text: "HTML નું પૂરું નામ શું છે?",
-        options: { A: "HighText Machine Language", B: "HyperText Markup Language", C: "Hyperlink Text Mode Language", D: "Hyper Tool Markup Language" }
-      }
-      // 👉 બાકીના પ્રશ્નો q5 થી q100 આ જ ફોર્મેટમાં અહીં પેસ્ટ કરો...
+      { id: "q1", text: "ગુજરાતનું પાટનગર કયું છે?", options: { A: "અમદાવાદ", B: "ગાંધીનગર", C: "વડોદરા", D: "રાજકોટ" } },
+      { id: "q2", text: "કમ્પ્યુટરનું મગજ કોને કહેવામાં આવે છે?", options: { A: "RAM", B: "CPU", C: "Hard Disk", D: "Monitor" } },
+      { id: "q3", text: "ભારતનું રાષ્ટ્રીય ફૂલ કયું છે?", options: { A: "ગુલાબ", B: "સૂર્યમુખી", C: "કમળ", D: "મોગરો" } },
+      { id: "q4", text: "HTML નું પૂરું નામ શું છે?", options: { A: "HighText Machine Language", B: "HyperText Markup Language", C: "Hyperlink Text Mode Language", D: "Hyper Tool Markup Language" } }
+      // બાકીના પ્રશ્નો અહીં ઉમેરવા...
     ];
 
-    // ગ્લોબલ વેરિએબલ્સ
     let timeLeft = EXAM_MINUTES * 60;
     let timerInterval = null;
     let isExamActive = false;
@@ -120,48 +104,21 @@
     let initialWidth = window.innerWidth;
     let initialHeight = window.innerHeight;
 
-    // GPS અંતર ગણતરી (Haversine Formula)
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    }
+    // QR ટોકન ચકાસણી (URL માંથી token પેરામીટર રીડ કરશે)
+    function verifyQRToken() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
 
-    // લોકેશન ચકાસણી
-    function verifyLocation() {
-      if (!navigator.geolocation) {
-        showGeoError("તમારા બ્રાઉઝરમાં GPS સપોર્ટ નથી.");
-        return;
+      if (token === SECRET_QR_TOKEN) {
+        document.getElementById("auth-box").style.display = "block";
+        document.getElementById("error-box").style.display = "none";
+      } else {
+        document.getElementById("auth-box").style.display = "none";
+        document.getElementById("error-box").style.display = "block";
       }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const dist = calculateDistance(TARGET_LAT, TARGET_LON, pos.coords.latitude, pos.coords.longitude);
-          if (dist <= MAX_ALLOWED_DISTANCE) {
-            document.getElementById("geo-status-title").innerText = "સ્થળ ચકાસણી સફળ!";
-            document.getElementById("geo-status-title").style.color = "#4ade80";
-            document.getElementById("geo-status-msg").innerText = "તમે નિર્ધારિત કેમ્પસમાં હાજર છો. હવે વિગતો ભરો.";
-            document.getElementById("login-box").style.display = "block";
-          } else {
-            showGeoError(`તમે પરીક્ષા કેન્દ્રની બહાર છો (અંદાજે ${Math.round(dist)} મીટર દૂર).`);
-          }
-        },
-        () => showGeoError("GPS બંધ છે અથવા લોકેશન પરવાનગી નકારી છે. GPS ચાલુ કરો."),
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
     }
 
-    function showGeoError(msg) {
-      const title = document.getElementById("geo-status-title");
-      title.innerText = "પ્રવેશ પ્રતિબંધિત!";
-      title.style.color = "#ef4444";
-      document.getElementById("geo-status-msg").innerText = msg;
-    }
-
-    // સવાલો શફલ કરવા (દરેક વિદ્યાર્થીને અલગ ક્રમ મળશે)
+    // પ્રશ્નો શફલિંગ
     function shuffle(arr) {
       let copy = [...arr];
       for (let i = copy.length - 1; i > 0; i--) {
@@ -171,11 +128,9 @@
       return copy;
     }
 
-    // પેજ પર સવાલો ગોઠવવા
     function renderQuiz() {
-      const shuffled = shuffle(rawQuestions);
       const container = document.getElementById("questions-container");
-      container.innerHTML = shuffled.map((q, idx) => `
+      container.innerHTML = shuffle(rawQuestions).map((q, idx) => `
         <div class="question-card">
           <div class="question-title">${idx + 1}. ${q.text}</div>
           <div class="options">
@@ -190,7 +145,7 @@
       `).join('');
     }
 
-    // પરીક્ષા શરૂ કરવી
+    // પરીક્ષા શરૂ
     function startExam() {
       const name = document.getElementById("stud-name").value.trim();
       const roll = document.getElementById("stud-roll").value.trim();
@@ -201,7 +156,6 @@
       studentData = { name, roll };
       document.getElementById("display-student").innerText = `${name} | રોલ નં: ${roll}`;
 
-      // ફુલસ્ક્રીન કરવું
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(() => {});
       }
@@ -211,7 +165,6 @@
       document.getElementById("exam-box").style.display = "block";
       isExamActive = true;
 
-      // ટાઈમર શરૂ
       timerInterval = setInterval(() => {
         timeLeft--;
         let m = Math.floor(timeLeft / 60);
@@ -221,7 +174,7 @@
       }, 1000);
     }
 
-    // જવાબો LocalStorage માં આપમેળે સેવ કરવા
+    // ઓટો સેવ
     function saveAnswers() {
       const formData = new FormData(document.getElementById("quiz-form"));
       localStorage.setItem("exam_cache", JSON.stringify(Object.fromEntries(formData.entries())));
@@ -238,7 +191,7 @@
       }
     }
 
-    // ચીટિંગ ડિટેક્શન / નિયમ ભંગ હેન્ડલર
+    // પ્રોક્ટરિંગ
     function handleViolation(reason) {
       if (!isExamActive) return;
       violationCount++;
@@ -256,7 +209,6 @@
       document.getElementById("lockout-modal").style.display = "flex";
     }
 
-    // સુપરવાઈઝર PIN અનલોક
     function unlockExam() {
       if (document.getElementById("supervisor-pin").value === SUPERVISOR_PIN) {
         if (document.documentElement.requestFullscreen) {
@@ -270,7 +222,7 @@
       }
     }
 
-    // સુરક્ષા ઇવેન્ટ્સ: ટેબ સ્વિચ, મિનિમાઇઝ, AI સ્પ્લિટ-સ્ક્રીન
+    // સિક્યોરિટી ઇવેન્ટ્સ
     document.addEventListener("visibilitychange", () => {
       if (isExamActive && document.hidden) handleViolation("ટેબ સ્વિચ અથવા એપ મિનિમાઇઝ કરી");
     });
@@ -285,7 +237,6 @@
       }
     });
 
-    // કૉપી-પેસ્ટ અને શૉર્ટકટ્સ બ્લોક
     document.addEventListener("copy", (e) => { e.preventDefault(); if (isExamActive) handleViolation("પ્રશ્ન કૉપી કર્યો"); });
     document.addEventListener("paste", (e) => e.preventDefault());
     document.addEventListener("keydown", (e) => {
@@ -295,7 +246,7 @@
       }
     });
 
-    // પેપર સબમિશન
+    // સબમિશન
     function submitExam(reason) {
       if (!isExamActive && violationCount <= MAX_VIOLATIONS && reason === "વિદ્યાર્થી દ્વારા જાતે સબમિટ") return;
       isExamActive = false;
@@ -308,14 +259,12 @@
       `;
 
       const formData = new FormData(document.getElementById("quiz-form"));
-      const answers = Object.fromEntries(formData.entries());
-
       const payload = {
         name: studentData.name,
         rollNo: studentData.roll,
         status: reason,
         violations: violationCount,
-        answers: answers
+        answers: Object.fromEntries(formData.entries())
       };
 
       fetch(SCRIPT_URL, {
@@ -329,8 +278,8 @@
           <div style="text-align:center; padding:50px; font-family:system-ui;">
             <h1 style="color:#16a34a;">પરીક્ષા પૂર્ણ થઈ ગઈ છે</h1>
             <p><strong>વિદ્યાર્થી:</strong> ${studentData.name} | <strong>રોલ:</strong> ${studentData.roll}</p>
-            <p><strong>સબમિશન સ્ટેટસ:</strong> ${reason}</p>
-            <p>તમારા જવાબો Google Sheet માં સેવ થઈ ગયા છે.</p>
+            <p><strong>સ્ટેટસ:</strong> ${reason}</p>
+            <p>તમારા જવાબો Google Sheet માં સફળતાપૂર્વક નોંધાઈ ગયા છે.</p>
           </div>
         `;
       }).catch((e) => {
@@ -338,8 +287,8 @@
       });
     }
 
-    // પેજ ખૂલતાં જ લોકેશન ચેક
-    window.onload = verifyLocation;
+    // પેજ લોડ થતાં જ QR Token વેરિફાય કરો
+    window.onload = verifyQRToken;
   </script>
 </body>
 </html>

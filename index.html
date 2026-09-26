@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch B First Terminal Surgery Exam MPSGMC Jamnagar</title>
+  <style>
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f1f5f9; margin: 0; padding: 15px; color: #1e293b; }
+    .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px; }
+    .timer { font-size: 1.25rem; font-weight: bold; color: #dc2626; background: #fee2e2; padding: 8px 16px; border-radius: 8px; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+    .form-group input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; }
+    .question-card { margin-bottom: 25px; padding: 18px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; }
+    .question-title { font-weight: 600; font-size: 1.05rem; margin-bottom: 12px; line-height: 1.5; }
+    .options label { display: flex; align-items: center; margin: 10px 0; padding: 12px; background: #f8fafc; border-radius: 6px; cursor: pointer; border: 1px solid #e2e8f0; }
+    .options label:hover { background: #e2e8f0; }
+    .options input[type="radio"] { margin-right: 12px; transform: scale(1.2); }
+    .btn { background: #2563eb; color: white; border: none; padding: 12px 24px; font-size: 1rem; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; }
+    .btn:hover { background: #1d4ed8; }
+    .overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f172a; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; text-align: center; padding: 25px; }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+
+  <!-- ૧. QR કોડ વેરિફિકેશન અને વિગતો ભરવાનું મોડલ -->
+  <div id="start-overlay" class="overlay">
+    <div id="auth-box" style="max-width: 360px; width: 100%;">
+      <h2 id="status-title" style="color: #38bdf8; margin-bottom: 5px;">BATCH B FIRST TERMINAL SURGERY EXAM OCT 2026</h2>
+      <p id="status-msg" style="color: #94a3b8; margin-bottom: 20px;">Please fill your details</p>
+
+      <div class="form-group" style="text-align: left;">
+        <label>Full name:</label>
+        <input type="text" id="stud-name" placeholder="Krutarth M Vatsaraj" required>
+      </div>
+      <div class="form-group" style="text-align: left;">
+        <label>Roll number:</label>
+        <input type="text" id="stud-roll" placeholder="દા.ત. 101" required>
+      </div>
+      <button class="btn" onclick="startExam()">પરીક્ષા શરૂ કરો (Full Screen)</button>
+    </div>
+
+    <!-- જો QR સ્કેન વગર ડાયરેક્ટ ખોલે તો આ એરર બોક્સ દેખાશે -->
+    <div id="error-box" style="display: none; max-width: 400px;">
+      <h2 style="color: #ef4444; font-size: 1.8rem;">🚫 પ્રવેશ પ્રતિબંધિત!</h2>
+      <p style="font-size: 1.1rem; line-height: 1.6;">તમે માન્ય QR કોડ સ્કેન કર્યો નથી અથવા સીધી લિંક ખોલી છે.</p>
+      <p style="color: #fca5a5;">કૃપા કરીને પરીક્ષા હોલના બોર્ડ પર લગાવેલો QR કોડ સ્કેન કરો.</p>
+    </div>
+  </div>
+
+  <!-- ૨. સુપરવાઇઝર અનલોક મોડલ -->
+  <div id="lockout-modal" class="overlay" style="display: none; background: rgba(15, 23, 42, 0.96);">
+    <h2 style="color: #ef4444; font-size: 1.8rem; margin-bottom: 10px;">⚠️ પેપર લૉક કરવામાં આવ્યું છે (Paper locked)</h2>
+    <p id="lockout-reason" style="font-size: 1.1rem; color: #fca5a5;"></p>
+    <p>સુપરવાઇઝરને બોલાવો અને તેમનો પિન દાખલ કરાવો.</p>
+    <div style="max-width: 280px; width: 100%; margin-top: 20px;">
+      <input type="password" id="supervisor-pin" placeholder="સુપરવાઇઝર PIN" style="width: 100%; padding: 12px; font-size: 1.2rem; border-radius: 6px; border: none; text-align: center; margin-bottom: 12px;">
+      <button class="btn" onclick="unlockExam()" style="background: #16a34a;">અનલોક કરો</button>
+    </div>
+  </div>
+
+  <!-- ૩. મુખ્ય પ્રશ્નપત્ર સેક્શન -->
+  <div class="container" id="exam-box" style="display: none;">
+    <div class="header">
+      <div>
+        <h3 id="display-student" style="margin: 0; color: #0f172a;"></h3>
+        <small style="color: #64748b;">પરીક્ષા દરમિયાન સ્ક્રીન છોડવી નહીં</small>
+      </div>
+      <div class="timer" id="timer-display">સમય: 60:00</div>
+    </div>
+
+    <form id="quiz-form">
+      <div id="questions-container"></div>
+      <button type="button" class="btn" style="margin-top: 20px;" onclick="submitExam('વિદ્યાર્થી દ્વારા જાતે સબમિટ')">પેપર સબમિટ કરો</button>
+    </form>
+  </div>
+
+  <script>
+    // ==========================================
+    // ૧. સેટિંગ્સ
+    // ==========================================
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx99mAPf6b026aaEv3pp-goIUSAUrt5e7na9zYxOyFWJfTEqwhRDUdtOBxQTSG4Gxvc/exec";
+    const SECRET_QR_TOKEN = "EXAM2026_ROOM1"; // આ ટોકન QR Code ની લિંકમાં હોવો જરૂરી છે
+    const EXAM_MINUTES = 60;
+    const SUPERVISOR_PIN = "9824";
+    const MAX_VIOLATIONS = 3;
+
+    const rawQuestions = [
+  { id: "q1", text: "Which type of shock is most commonly caused by acute blood loss?", options: { A: "Cardiogenic shock", B: "Hypovolaemic shock", C: "Neurogenic shock", D: "Obstructive shock" } },
+  { id: "q2", text: "The earliest compensatory response to acute haemorrhage is usually:", options: { A: "Bradycardia", B: "Tachycardia", C: "Severe hypotension", D: "Renal failure" } },
+  { id: "q3", text: "Which blood component is primarily used to increase oxygen-carrying capacity?", options: { A: "Platelets", B: "Fresh frozen plasma", C: "Packed red blood cells", D: "Cryoprecipitate" } },
+  { id: "q4", text: "A patient with severe bleeding develops prolonged PT and aPTT with low fibrinogen. This is most suggestive of:", options: { A: "Hypercalcaemia", B: "Coagulopathy", C: "Respiratory alkalosis", D: "Acute renal failure" } },
+  { id: "q5", text: "Which clinical finding is most suggestive of inadequate tissue perfusion?", options: { A: "Warm extremities with normal urine output", B: "Increased urine output", C: "Altered mental status and oliguria", D: "Bradycardia with hypertension" } },
+  { id: "q6", text: "The inflammatory phase of wound healing is characterized predominantly by:", options: { A: "Collagen maturation", B: "Haemostasis and inflammatory-cell recruitment", C: "Scar contraction only", D: "Epithelial keratinisation" } },
+  { id: "q7", text: "Which cell is particularly important for collagen synthesis during the proliferative phase?", options: { A: "Fibroblast", B: "Neutrophil", C: "Platelet", D: "Erythrocyte" } },
+  { id: "q8", text: "The principal collagen type in early granulation tissue is:", options: { A: "Type I", B: "Type II", C: "Type III", D: "Type IV" } },
+  { id: "q9", text: "Wound contraction is mainly mediated by:", options: { A: "Osteoblasts", B: "Myofibroblasts", C: "Neutrophils", D: "Chondrocytes" } },
+  { id: "q10", text: "Which factor is most likely to impair wound healing?", options: { A: "Adequate oxygenation", B: "Good nutrition", C: "Infection", D: "Normal perfusion" } },
+  { id: "q11", text: "The most important first step in managing a clinically significant surgical site infection is:", options: { A: "Ignore the wound until culture results return", B: "Assess and control the source of infection", C: "Give corticosteroids", D: "Restrict all fluids" } },
+  { id: "q12", text: "Which organism is a common cause of surgical site infection?", options: { A: "Staphylococcus aureus", B: "Plasmodium falciparum", C: "Mycobacterium leprae", D: "Giardia lamblia" } },
+  { id: "q13", text: "A collection of pus within tissue is called a:", options: { A: "Seroma", B: "Haematoma", C: "Abscess", D: "Sinus" } },
+  { id: "q14", text: "The main principle of abscess treatment is:", options: { A: "Antibiotics alone in every case", B: "Incision and drainage when appropriate", C: "Compression only", D: "Anticoagulation" } },
+  { id: "q15", text: "Necrotising soft-tissue infection requires:", options: { A: "Observation only", B: "Urgent surgical assessment and source control", C: "Oral vitamins", D: "Delayed treatment until cultures are finalized" } },
+  { id: "q16", text: "The primary purpose of pre-operative assessment is to:", options: { A: "Eliminate the need for consent", B: "Identify and optimise modifiable risks", C: "Avoid taking a medical history", D: "Replace postoperative monitoring" } },
+  { id: "q17", text: "Which factor is particularly important when assessing perioperative cardiac risk?", options: { A: "Hair colour", B: "Functional capacity", C: "Eye colour", D: "Hand dominance" } },
+  { id: "q18", text: "Smoking cessation before surgery can help reduce:", options: { A: "Wound and pulmonary complications", B: "Blood group incompatibility", C: "Genetic disease", D: "Bone length" } },
+  { id: "q19", text: "Pre-operative consent should include discussion of:", options: { A: "Only the surgeon's preferred procedure", B: "Relevant benefits, risks and alternatives", C: "Only the cost of surgery", D: "Only the anaesthetic drug" } },
+  { id: "q20", text: "Which patient is generally considered to have increased perioperative risk?", options: { A: "Healthy young patient undergoing minor surgery", B: "Patient with significant cardiac disease undergoing major surgery", C: "Healthy patient having a short outpatient procedure", D: "Patient with no comorbidities" } },
+  { id: "q21", text: "General anaesthesia typically produces:", options: { A: "Complete loss of consciousness", B: "Only local skin numbness", C: "Permanent paralysis", D: "Isolated sensory loss without unconsciousness" } },
+  { id: "q22", text: "Local anaesthetic agents primarily act by blocking:", options: { A: "Calcium absorption", B: "Voltage-gated sodium channels", C: "Potassium production", D: "Haemoglobin synthesis" } },
+  { id: "q23", text: "Which drug class is commonly used for moderate-to-severe acute postoperative pain?", options: { A: "Opioids", B: "Antacids", C: "Antihistamines only", D: "Anticoagulants" } },
+  { id: "q24", text: "A major adverse effect of opioid analgesia is:", options: { A: "Respiratory depression", B: "Hyperactivity", C: "Severe polyuria", D: "Increased bowel motility" } },
+  { id: "q25", text: "Multimodal analgesia means:", options: { A: "Using only one analgesic at a high dose", B: "Combining analgesic methods with different mechanisms", C: "Avoiding analgesics completely", D: "Giving antibiotics with analgesics" } },
+  { id: "q26", text: "An important early postoperative priority is assessment of:", options: { A: "Airway and breathing", B: "Hair growth", C: "Visual acuity only", D: "Dental alignment" } },
+  { id: "q27", text: "Postoperative tachycardia may be caused by:", options: { A: "Pain or hypovolaemia", B: "Adequate analgesia only", C: "Hypothermia exclusively", D: "Normal sleep" } },
+  { id: "q28", text: "Early mobilisation after surgery can reduce the risk of:", options: { A: "Venous thromboembolism", B: "Myopia", C: "Otitis externa", D: "Dental caries" } },
+  { id: "q29", text: "A postoperative fever occurring very early after surgery may be associated with:", options: { A: "Inflammatory response to surgery", B: "Cataract formation", C: "Chronic renal disease in every case", D: "Bone fracture" } },
+  { id: "q30", text: "Postoperative oliguria should prompt assessment of:", options: { A: "Fluid status and renal perfusion", B: "Hair loss", C: "Visual field", D: "Hearing" } },
+  { id: "q31", text: "The major extracellular fluid cation is:", options: { A: "Sodium", B: "Potassium", C: "Calcium", D: "Magnesium" } },
+  { id: "q32", text: "The major intracellular cation is:", options: { A: "Sodium", B: "Potassium", C: "Chloride", D: "Bicarbonate" } },
+  { id: "q33", text: "Enteral nutrition is generally preferred when:", options: { A: "The gastrointestinal tract is functional", B: "The gastrointestinal tract is completely inaccessible", C: "There is absolute contraindication to feeding", D: "The patient has no nutritional requirements" } },
+  { id: "q34", text: "A common clinical manifestation of significant dehydration is:", options: { A: "Reduced urine output", B: "Increased skin turgor", C: "Generalised oedema in every case", D: "Bradycardia with hypertension" } },
+  { id: "q35", text: "Refeeding syndrome is particularly associated with rapid nutritional replenishment in:", options: { A: "Severely malnourished patients", B: "Healthy athletes only", C: "Patients with isolated fractures only", D: "Patients with normal nutritional status" } },
+  { id: "q36", text: "The most important initial priority in a patient with major burns is:", options: { A: "Cosmetic reconstruction", B: "Airway, breathing and circulation", C: "Scar massage", D: "Physiotherapy" } },
+  { id: "q37", text: "A full-thickness burn destroys:", options: { A: "Only the epidermis", B: "Epidermis and part of dermis", C: "Entire epidermis and dermis", D: "Only subcutaneous fat" } },
+  { id: "q38", text: "The Rule of Nines is used primarily to estimate:", options: { A: "Burn depth", B: "Percentage of total body surface area burned", C: "Blood loss", D: "Fluid intake" } },
+  { id: "q39", text: "A circumferential full-thickness burn of a limb may cause:", options: { A: "Compartment-like vascular compromise", B: "Hyperthyroidism", C: "Cataract", D: "Appendicitis" } },
+  { id: "q40", text: "In a patient with suspected inhalational injury, an important early concern is:", options: { A: "Progressive airway oedema", B: "Acute appendicitis", C: "Gallstones", D: "Femoral fracture" } },
+  { id: "q41", text: "Pain originating from a hollow abdominal viscus is often described as:", options: { A: "Visceral pain", B: "Somatic pain only", C: "Neuropathic pain exclusively", D: "Cutaneous pain" } },
+  { id: "q42", text: "Rebound tenderness is a clinical sign of:", options: { A: "Peritoneal irritation", B: "Hypoglycaemia", C: "Hyperthyroidism", D: "Renal failure" } },
+  { id: "q43", text: "The correct sequence of abdominal examination is generally:", options: { A: "Inspection, auscultation, percussion, palpation", B: "Palpation, percussion, inspection, auscultation", C: "Auscultation, palpation, inspection, percussion", D: "Percussion, palpation, auscultation, inspection" } },
+  { id: "q44", text: "A palpable enlarged spleen is most likely detected in the:", options: { A: "Right iliac fossa", B: "Left upper quadrant", C: "Suprapubic region", D: "Right hypochondrium only" } },
+  { id: "q45", text: "Guarding of the abdominal muscles may indicate:", options: { A: "Peritoneal irritation", B: "Normal digestion", C: "Hyperlipidaemia", D: "Anaemia alone" } },
+  { id: "q46", text: "A hernia is best described as:", options: { A: "Inflammation of a muscle", B: "Abnormal protrusion of tissue through a defect or weakness", C: "Infection of the skin", D: "Fracture of the abdominal wall" } },
+  { id: "q47", text: "An indirect inguinal hernia passes:", options: { A: "Medial to the inferior epigastric vessels", B: "Lateral to the inferior epigastric vessels", C: "Through the femoral canal", D: "Through the obturator canal" } },
+  { id: "q48", text: "A direct inguinal hernia typically occurs:", options: { A: "Lateral to the inferior epigastric vessels", B: "Medial to the inferior epigastric vessels", C: "Through the femoral ring", D: "Through the oesophageal hiatus" } },
+  { id: "q49", text: "A femoral hernia passes through the:", options: { A: "Femoral canal", B: "Deep inguinal ring", C: "Superficial inguinal ring", D: "Umbilical ring" } },
+  { id: "q50", text: "An incarcerated hernia is one that:", options: { A: "Is always strangulated", B: "Cannot be reduced", C: "Contains only fluid", D: "Is always painless" } },
+  { id: "q51", text: "The most common site of a duodenal peptic ulcer is the:", options: { A: "First part of the duodenum", B: "Third part of the duodenum", C: "Fourth part of the duodenum", D: "Duodenojejunal flexure" } },
+  { id: "q52", text: "Helicobacter pylori is strongly associated with:", options: { A: "Peptic ulcer disease", B: "Appendicitis", C: "Gallstone formation", D: "Splenic rupture" } },
+  { id: "q53", text: "A major complication of peptic ulcer disease is:", options: { A: "Perforation", B: "Cataract", C: "Hydrocele", D: "Varicose veins" } },
+  { id: "q54", text: "Gastric outlet obstruction commonly causes:", options: { A: "Persistent vomiting", B: "Haematuria", C: "Jaundice in every case", D: "Rectal bleeding" } },
+  { id: "q55", text: "A perforated peptic ulcer may produce:", options: { A: "Generalised peritonitis", B: "Isolated ankle swelling", C: "Chronic cough only", D: "Painless haematuria" } },
+  { id: "q56", text: "The largest solid organ in the human body is the:", options: { A: "Liver", B: "Spleen", C: "Pancreas", D: "Kidney" } },
+  { id: "q57", text: "The portal vein carries blood to the liver from:", options: { A: "The gastrointestinal tract and spleen", B: "The lungs only", C: "The heart only", D: "The brain" } },
+  { id: "q58", text: "Jaundice refers to yellow discoloration caused by increased:", options: { A: "Bilirubin", B: "Albumin", C: "Sodium", D: "Calcium" } },
+  { id: "q59", text: "A common complication of advanced chronic liver disease is:", options: { A: "Portal hypertension", B: "Hyperthyroidism", C: "Osteomyelitis", D: "Cataract" } },
+  { id: "q60", text: "Hepatocellular carcinoma is a primary malignant tumour of the:", options: { A: "Liver", B: "Pancreas", C: "Spleen", D: "Gallbladder" } },
+  { id: "q61", text: "The spleen is primarily located in the:", options: { A: "Left upper quadrant", B: "Right lower quadrant", C: "Pelvis", D: "Epigastrium only" } },
+  { id: "q62", text: "An important function of the spleen is:", options: { A: "Immune surveillance and removal of aged blood cells", B: "Production of bile", C: "Production of insulin", D: "Urine concentration" } },
+  { id: "q63", text: "Splenectomy increases the risk of severe infection particularly with:", options: { A: "Encapsulated bacteria", B: "Dermatophytes only", C: "Protozoa only", D: "Anaerobic bacteria only" } },
+  { id: "q64", text: "A patient who has undergone elective splenectomy should receive appropriate vaccination against:", options: { A: "Encapsulated organisms", B: "Malaria only", C: "Tetanus only", D: "Fungal infections only" } },
+  { id: "q65", text: "Traumatic splenic injury most commonly results from:", options: { A: "Blunt abdominal trauma", B: "Chronic gastritis", C: "Appendicitis", D: "Renal stones" } },
+  { id: "q66", text: "The most common composition of gallstones in many Western populations is:", options: { A: "Cholesterol", B: "Calcium phosphate only", C: "Uric acid", D: "Oxalate" } },
+  { id: "q67", text: "The typical pain of biliary colic is felt in the:", options: { A: "Right upper abdomen", B: "Left iliac fossa", C: "Suprapubic region", D: "Left shoulder only" } },
+  { id: "q68", text: "Acute cholecystitis is most commonly caused by:", options: { A: "Cystic duct obstruction by a gallstone", B: "Pancreatic cancer", C: "Appendiceal rupture", D: "Renal obstruction" } },
+  { id: "q69", text: "A stone obstructing the common bile duct may cause:", options: { A: "Obstructive jaundice", B: "Haematuria", C: "Dysphagia", D: "Limb weakness" } },
+  { id: "q70", text: "The standard operation for symptomatic gallstone disease is:", options: { A: "Cholecystectomy", B: "Splenectomy", C: "Appendicectomy", D: "Colectomy" } },
+  { id: "q71", text: "The pancreas has:", options: { A: "Endocrine and exocrine functions", B: "Only endocrine functions", C: "Only exocrine functions", D: "Only immune functions" } },
+  { id: "q72", text: "The endocrine cells that produce insulin are mainly:", options: { A: "Beta cells", B: "Alpha cells", C: "Delta cells", D: "Acinar cells" } },
+  { id: "q73", text: "A common cause of acute pancreatitis is:", options: { A: "Gallstones", B: "Appendicitis", C: "Inguinal hernia", D: "Peptic stricture" } },
+  { id: "q74", text: "A characteristic feature of acute pancreatitis is:", options: { A: "Severe upper abdominal pain", B: "Painless haematuria", C: "Isolated neck pain", D: "Calf swelling" } },
+  { id: "q75", text: "Chronic pancreatitis may lead to:", options: { A: "Exocrine pancreatic insufficiency", B: "Hyperthyroidism", C: "Splenic rupture", D: "Acute appendicitis" } },
+  { id: "q76", text: "The small intestine consists of the:", options: { A: "Duodenum, jejunum and ileum", B: "Caecum, colon and rectum", C: "Stomach, jejunum and colon", D: "Duodenum, colon and rectum" } },
+  { id: "q77", text: "Most nutrient absorption occurs in the:", options: { A: "Small intestine", B: "Oesophagus", C: "Rectum", D: "Stomach only" } },
+  { id: "q78", text: "The terminal ileum is particularly important for absorption of:", options: { A: "Vitamin B12", B: "Vitamin C only", C: "Calcium only", D: "Glucose only" } },
+  { id: "q79", text: "Meckel's diverticulum is a remnant of the:", options: { A: "Vitellointestinal duct", B: "Urachus", C: "Omphalomesenteric artery only", D: "Wolffian duct" } },
+  { id: "q80", text: "Small bowel perforation may lead to:", options: { A: "Peritonitis", B: "Cataract", C: "Otitis", D: "Hyperthyroidism" } },
+  { id: "q81", text: "The two major forms of inflammatory bowel disease are:", options: { A: "Crohn's disease and ulcerative colitis", B: "Appendicitis and diverticulitis", C: "Coeliac disease and peptic ulcer disease", D: "Haemorrhoids and fissure" } },
+  { id: "q82", text: "Ulcerative colitis primarily affects the:", options: { A: "Colon and rectum", B: "Stomach", C: "Oesophagus", D: "Small intestine exclusively" } },
+  { id: "q83", text: "Crohn's disease may affect:", options: { A: "Any part of the gastrointestinal tract", B: "Only the rectum", C: "Only the stomach", D: "Only the oesophagus" } },
+  { id: "q84", text: "A characteristic complication of Crohn's disease is:", options: { A: "Fistula formation", B: "Cataract", C: "Splenic rupture", D: "Gallbladder agenesis" } },
+  { id: "q85", text: "Toxic megacolon is a serious complication associated particularly with:", options: { A: "Severe ulcerative colitis", B: "Inguinal hernia", C: "Cholelithiasis", D: "Acute pancreatitis" } },
+  { id: "q86", text: "The appendix arises from the:", options: { A: "Caecum", B: "Ileum", C: "Ascending colon", D: "Sigmoid colon" } },
+  { id: "q87", text: "Acute appendicitis commonly begins with pain that is initially:", options: { A: "Central/periumbilical", B: "Left shoulder", C: "Suprapubic only", D: "Right loin only" } },
+  { id: "q88", text: "Pain classically localising to the right iliac fossa in appendicitis is related to:", options: { A: "Parietal peritoneal irritation", B: "Gastric acid secretion", C: "Biliary obstruction", D: "Renal failure" } },
+  { id: "q89", text: "A common complication of untreated appendicitis is:", options: { A: "Perforation", B: "Cataract", C: "Hydrocele", D: "Varicocele" } },
+  { id: "q90", text: "The usual definitive surgical treatment for acute appendicitis is:", options: { A: "Appendicectomy", B: "Colectomy", C: "Splenectomy", D: "Gastrectomy" } },
+  { id: "q91", text: "The large intestine includes the:", options: { A: "Caecum, colon and rectum", B: "Duodenum, jejunum and ileum", C: "Stomach and colon only", D: "Oesophagus and rectum" } },
+  { id: "q92", text: "The ascending colon is located predominantly on the:", options: { A: "Right side of the abdomen", B: "Left side of the abdomen", C: "Midline pelvis", D: "Left thorax" } },
+  { id: "q93", text: "Diverticular disease most commonly affects the:", options: { A: "Sigmoid colon", B: "Duodenum", C: "Oesophagus", D: "Appendix" } },
+  { id: "q94", text: "Colorectal cancer may present with:", options: { A: "Altered bowel habit and rectal bleeding", B: "Only haematuria", C: "Only jaundice", D: "Only chest pain" } },
+  { id: "q95", text: "A major risk factor for colorectal cancer is:", options: { A: "Increasing age", B: "Blue eye colour", C: "Left-handedness", D: "Short stature" } },
+  { id: "q96", text: "Intestinal obstruction is characterised by impaired passage of:", options: { A: "Intestinal contents", B: "Blood through arteries only", C: "Urine through the ureters", D: "Air through the trachea" } },
+  { id: "q97", text: "A common symptom of intestinal obstruction is:", options: { A: "Vomiting", B: "Haemoptysis", C: "Dysuria only", D: "Jaundice only" } },
+  { id: "q98", text: "Adhesions are an important cause of:", options: { A: "Small bowel obstruction", B: "Peptic ulcer disease", C: "Acute hepatitis", D: "Splenic rupture" } },
+  { id: "q99", text: "Strangulated obstruction means that there is:", options: { A: "Compromise of the blood supply to the affected bowel", B: "Simple constipation only", C: "Increased bile production", D: "Isolated gastric inflammation" } },
+  { id: "q100", text: "An important initial management principle in suspected intestinal obstruction is:", options: { A: "Fluid resuscitation and correction of electrolyte abnormalities", B: "Immediate oral feeding", C: "Deliberate dehydration", D: "Avoiding all investigations" } }
+];
+
+    let timeLeft = EXAM_MINUTES * 60;
+    let timerInterval = null;
+    let isExamActive = false;
+    let studentData = { name: "", roll: "" };
+    let violationCount = 0;
+    let initialWidth = window.innerWidth;
+    let initialHeight = window.innerHeight;
+
+    // QR ટોકન ચકાસણી
+    function verifyQRToken() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      if (token === SECRET_QR_TOKEN) {
+        document.getElementById("auth-box").style.display = "block";
+        document.getElementById("error-box").style.display = "none";
+      } else {
+        document.getElementById("auth-box").style.display = "none";
+        document.getElementById("error-box").style.display = "block";
+      }
+    }
+
+    // પ્રશ્નો શફલિંગ
+    function shuffle(arr) {
+      let copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function renderQuiz() {
+      const container = document.getElementById("questions-container");
+      container.innerHTML = shuffle(rawQuestions).map((q, idx) => `
+        <div class="question-card">
+          <div class="question-title">${idx + 1}. ${q.text}</div>
+          <div class="options">
+            ${Object.entries(q.options).map(([k, val]) => `
+              <label>
+                <input type="radio" name="${q.id}" value="${k}">
+                <strong>${k}.</strong>&nbsp;${val}
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // પરીક્ષા શરૂ
+    function startExam() {
+      const name = document.getElementById("stud-name").value.trim();
+      const roll = document.getElementById("stud-roll").value.trim();
+      if (!name || !roll) {
+        alert("કૃપા કરીને નામ અને રોલ નંબર બંને લખો!");
+        return;
+      }
+      studentData = { name, roll };
+      document.getElementById("display-student").innerText = `${name} | રોલ નં: ${roll}`;
+
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+
+      renderQuiz();
+      document.getElementById("start-overlay").style.display = "none";
+      document.getElementById("exam-box").style.display = "block";
+      isExamActive = true;
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        let m = Math.floor(timeLeft / 60);
+        let s = timeLeft % 60;
+        document.getElementById("timer-display").innerText = `સમય: ${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        if (timeLeft <= 0) submitExam("સમય પૂર્ણ થયો");
+      }, 1000);
+    }
+
+    // ઓટો સેવ
+    function saveAnswers() {
+      const formData = new FormData(document.getElementById("quiz-form"));
+      localStorage.setItem("exam_cache", JSON.stringify(Object.fromEntries(formData.entries())));
+    }
+    document.getElementById("quiz-form").addEventListener("change", saveAnswers);
+
+    function restoreAnswers() {
+      const cache = localStorage.getItem("exam_cache");
+      if (!cache) return;
+      const parsed = JSON.parse(cache);
+      for (let [qId, val] of Object.entries(parsed)) {
+        const rad = document.querySelector(`input[name="${qId}"][value="${val}"]`);
+        if (rad) rad.checked = true;
+      }
+    }
+
+    // પ્રોક્ટરિંગ
+    function handleViolation(reason) {
+      if (!isExamActive) return;
+      violationCount++;
+      saveAnswers();
+
+      if (violationCount > MAX_VIOLATIONS) {
+        alert("મહત્તમ ચેતવણી મર્યાદા પૂરી થઈ. તમારું પેપર જમા થઈ રહ્યું છે.");
+        submitExam(`બહાર નીકળ્યા/લિમિટ પૂરી: ${reason}`);
+        return;
+      }
+
+      isExamActive = false;
+      document.getElementById("lockout-reason").innerText = `${reason} (ચેતવણી: ${violationCount}/${MAX_VIOLATIONS})`;
+      document.getElementById("supervisor-pin").value = "";
+      document.getElementById("lockout-modal").style.display = "flex";
+    }
+
+    function unlockExam() {
+      if (document.getElementById("supervisor-pin").value === SUPERVISOR_PIN) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+        document.getElementById("lockout-modal").style.display = "none";
+        isExamActive = true;
+        restoreAnswers();
+      } else {
+        alert("ખોટો સુપરવાઇઝર પિન!");
+      }
+    }
+
+    // સિક્યોરિટી ઇવેન્ટ્સ
+    document.addEventListener("visibilitychange", () => {
+      if (isExamActive && document.hidden) handleViolation("ટેબ સ્વિચ અથવા એપ મિનિમાઇઝ કરી");
+    });
+    window.addEventListener("blur", () => {
+      if (isExamActive) handleViolation("વિન્ડો અનફોકસ થઈ (કોલ/નોટિફિકેશન/બીજી એપ)");
+    });
+    window.addEventListener("resize", () => {
+      if (!isExamActive) return;
+      if (Math.abs(window.innerWidth - initialWidth) > initialWidth * 0.25 || 
+          Math.abs(window.innerHeight - initialHeight) > initialHeight * 0.25) {
+        handleViolation("સ્પ્લિટ-સ્ક્રીન અથવા AI ફ્લોટિંગ વિન્ડો ખોલી");
+      }
+    });
+
+    document.addEventListener("copy", (e) => { e.preventDefault(); if (isExamActive) handleViolation("પ્રશ્ન કૉપી કર્યો"); });
+    document.addEventListener("paste", (e) => e.preventDefault());
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "PrintScreen" || e.keyCode === 44) {
+        if (navigator.clipboard) navigator.clipboard.writeText("");
+        handleViolation("સ્ક્રીનશોટ લેવાનો પ્રયાસ કર્યો");
+      }
+    });
+
+    // ૧૦૦% અચૂક સબમિશન ફંક્શન (GET Ping Method - CORS મુક્ત)
+    function submitExam(reason) {
+      if (!isExamActive && violationCount <= MAX_VIOLATIONS && reason === "વિદ્યાર્થી દ્વારા જાતે સબમિટ") return;
+      isExamActive = false;
+      clearInterval(timerInterval);
+
+      // જવાબો પહેલા એકઠા કરવા (કારણ કે પછીથી સ્ક્રીન બદલાઈ જશે)
+      const quizForm = document.getElementById("quiz-form");
+      const formData = new FormData(quizForm);
+      const answersObj = Object.fromEntries(formData.entries());
+
+      // સબમિટ થતી વખતે પ્રોગ્રેસ સ્ક્રીન
+      document.body.innerHTML = `
+        <div style="text-align:center; padding:50px; font-family:system-ui;">
+          <h2 style="color:#2563eb;">પેપર જમા થઈ રહ્યું છે...</h2>
+          <p style="color:#64748b;">કૃપા કરીને રાહ જુઓ...</p>
+        </div>
+      `;
+
+      // URL પેરામીટર્સ તૈયાર કરવા
+      const queryParams = new URLSearchParams({
+        name: studentData.name,
+        rollNo: studentData.roll,
+        status: reason,
+        violations: violationCount,
+        answers: JSON.stringify(answersObj)
+      });
+
+      const fullSubmissionUrl = SCRIPT_URL + "?" + queryParams.toString();
+
+      // સફળતાનું કન્ફર્મેશન પેજ
+      let isCompleted = false;
+      const displaySuccess = () => {
+        if (isCompleted) return;
+        isCompleted = true;
+        localStorage.removeItem("exam_cache");
+        document.body.innerHTML = `
+          <div style="text-align:center; padding:50px; font-family:system-ui;">
+            <h1 style="color:#16a34a; font-size: 2.2rem; margin-bottom: 10px;">✅ પરીક્ષા સફળતાપૂર્વક પૂર્ણ થઈ ગઈ છે!</h1>
+            <p style="font-size:1.2rem; color:#1e293b;"><strong>વિદ્યાર્થી:</strong> ${studentData.name} | <strong>રોલ નંબર:</strong> ${studentData.roll}</p>
+            <p style="color:#64748b;"><strong>સ્ટેટસ:</strong> ${reason}</p>
+            <div style="margin-top:25px; padding:15px 25px; background:#dcfce7; color:#15803d; border-radius:8px; display:inline-block; font-weight:500;">
+              તમારા જવાબો Google Sheet માં સફળતાપૂર્વક નોંધાઈ ગયા છે. હવે તમે આ પેજ બંધ કરી શકો છો.
+            </div>
+          </div>
+        `;
+      };
+
+      // બ્રાઉઝર સિક્યોરિટી અને CORS થી બચવા માટે સૌથી સુરક્ષિત રીત: Hidden Form & Iframe 
+      const iframe = document.createElement("iframe");
+      iframe.name = "hidden_iframe";
+      iframe.style.display = "none";
+      document.body.appendChild(iframe);
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = SCRIPT_URL;
+      form.target = "hidden_iframe";
+      form.style.display = "none";
+
+      const params = {
+        name: studentData.name,
+        rollNo: studentData.roll,
+        status: reason,
+        violations: violationCount,
+        answers: JSON.stringify(answersObj)
+      };
+
+      for (let key in params) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = params[key];
+        form.appendChild(input);
+      }
+      
+      document.body.appendChild(form);
+      form.submit();
+
+      // ૧.૫ સેકન્ડમાં સ્ક્રીન પર સફળતા બતાવી દેવી
+      setTimeout(displaySuccess, 1500);
+    }
+
+    // પેજ લોડ થતાં જ QR Token વેરિફાય કરો
+    window.onload = verifyQRToken;
+  </script>
+</body>
+</html>

@@ -252,6 +252,11 @@
       isExamActive = false;
       clearInterval(timerInterval);
 
+      // જવાબો પહેલા એકઠા કરવા (કારણ કે પછીથી સ્ક્રીન બદલાઈ જશે)
+      const quizForm = document.getElementById("quiz-form");
+      const formData = new FormData(quizForm);
+      const answersObj = Object.fromEntries(formData.entries());
+
       // સબમિટ થતી વખતે પ્રોગ્રેસ સ્ક્રીન
       document.body.innerHTML = `
         <div style="text-align:center; padding:50px; font-family:system-ui;">
@@ -259,11 +264,6 @@
           <p style="color:#64748b;">કૃપા કરીને રાહ જુઓ...</p>
         </div>
       `;
-
-      // જવાબો એકઠા કરવા
-      const quizForm = document.getElementById("quiz-form");
-      const formData = new FormData(quizForm);
-      const answersObj = Object.fromEntries(formData.entries());
 
       // URL પેરામીટર્સ તૈયાર કરવા
       const queryParams = new URLSearchParams({
@@ -330,7 +330,4 @@
     }
 
     // પેજ લોડ થતાં જ QR Token વેરિફાય કરો
-    window.onload = verifyQRToken;
-  </script>
-</body>
-</html>
+    window.onload = ver

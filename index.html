@@ -294,13 +294,19 @@
         `;
       };
 
-      // Image Ping રિક્વેસ્ટ (જે બ્રાઉઝરના તમામ સુરક્ષા બ્લોકિંગને બાયપાસ કરે છે)
-      const sender = new Image();
-      sender.onload = displaySuccess;
-      sender.onerror = displaySuccess;
-      sender.src = fullSubmissionUrl;
+      // Fetch API રિક્વેસ્ટ (POST Method - CORS મુક્ત અને મોટા ડેટા માટે સુરક્ષિત)
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: queryParams.toString()
+      })
+      .then(() => displaySuccess())
+      .catch(() => displaySuccess());
 
-      // ૧.૫ સેકન્ડમાં સ્ક્રીન પર સફળતા બતાવી દેવી
+      // ૧.૫ સેકન્ડમાં સ્ક્રીન પર સફળતા બતાવી દેવી (બેકઅપ)
       setTimeout(displaySuccess, 1500);
     }
 

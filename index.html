@@ -294,19 +294,38 @@
         `;
       };
 
-      // Fetch API રિક્વેસ્ટ (POST Method - CORS મુક્ત અને મોટા ડેટા માટે સુરક્ષિત)
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: queryParams.toString()
-      })
-      .then(() => displaySuccess())
-      .catch(() => displaySuccess());
+      // બ્રાઉઝર સિક્યોરિટી અને CORS થી બચવા માટે સૌથી સુરક્ષિત રીત: Hidden Form & Iframe 
+      const iframe = document.createElement("iframe");
+      iframe.name = "hidden_iframe";
+      iframe.style.display = "none";
+      document.body.appendChild(iframe);
 
-      // ૧.૫ સેકન્ડમાં સ્ક્રીન પર સફળતા બતાવી દેવી (બેકઅપ)
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = SCRIPT_URL;
+      form.target = "hidden_iframe";
+      form.style.display = "none";
+
+      const params = {
+        name: studentData.name,
+        rollNo: studentData.roll,
+        status: reason,
+        violations: violationCount,
+        answers: JSON.stringify(answersObj)
+      };
+
+      for (let key in params) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = params[key];
+        form.appendChild(input);
+      }
+      
+      document.body.appendChild(form);
+      form.submit();
+
+      // ૧.૫ સેકન્ડમાં સ્ક્રીન પર સફળતા બતાવી દેવી
       setTimeout(displaySuccess, 1500);
     }
 
